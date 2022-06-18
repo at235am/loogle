@@ -9,6 +9,8 @@ import {
   MdDoubleArrow,
 } from "react-icons/md";
 
+import { FaAngleDown } from "react-icons/fa";
+
 import { useHoningState } from "../contexts/HoningContext";
 import { HoningFieldsNumber } from "../pages/honing";
 import { prettyNumber } from "../utils/utils";
@@ -54,15 +56,15 @@ const LevelTotal = styled(motion.div)`
   }
 `;
 
-const Arrow = styled.div`
+const Arrow = styled.span`
   font-weight: 600;
   font-size: 0.8rem;
   font-style: italic;
   color: inherit;
 
   svg {
-    width: 100%;
-    height: 100%;
+    width: 10px;
+    height: 10px;
   }
 `;
 
@@ -197,12 +199,12 @@ const ArrowIcon = styled(motion.span)`
   /* position: absolute; */
   /* right: 0; */
   /* margin-right: 0.5rem; */
-  /* background-color: ${({ theme }) => theme.colors.background.lighter}; */
+  background-color: ${({ theme }) => theme.colors.surface.main};
 
   border-radius: 50%;
 
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 22px;
+  height: 22px;
 
   /* justify-self: flex-end; */
 
@@ -211,55 +213,14 @@ const ArrowIcon = styled(motion.span)`
   align-items: center;
 
   svg {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 12px;
+    height: 12px;
   }
 `;
 
 const SubHeader = styled.div`
   display: flex;
   gap: 0.5rem;
-`;
-
-const ItemsWrapper = styled.div`
-  flex: 1;
-
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const SubH = styled.h4`
-  font-size: 0.8rem;
-  font-weight: 600;
-  font-style: italic;
-  /* color: #222; */
-
-  padding: 0.35rem 0.75rem;
-  background-color: ${({ theme }) => theme.colors.onBackground.darker};
-  background-color: ${({ theme }) => theme.colors.background.main};
-
-  border-top-left-radius: 13px;
-  border-bottom-right-radius: 13px;
-
-  display: flex;
-  gap: 0.25rem;
-
-  span {
-    color: inherit;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    font-style: normal;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3px;
-
-    svg {
-      width: 14px;
-      height: 14px;
-    }
-  }
 `;
 
 const TotalMats = styled(Mats)`
@@ -344,7 +305,8 @@ const HoningPieceResults = ({ data }: Props) => {
       <Total>
         <TotalHeader onClick={() => setExpand((v) => !v)}>
           <ArrowIcon {...iconAnimProps} className="arrow-icon">
-            <MdArrowDropDown />
+            <FaAngleDown />
+            {/* <MdArrowDropDown /> */}
           </ArrowIcon>
           <H>
             <span>

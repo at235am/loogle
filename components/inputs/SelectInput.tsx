@@ -134,7 +134,11 @@ const SelectInput = ({ options, value, onChange, className }: Props) => {
   const toggleShowOptions = () => setShowOptions((v) => !v);
 
   return (
-    <Container className={className}>
+    <Container
+      className={className}
+      tabIndex={0}
+      onBlur={() => setShowOptions(false)}
+    >
       <SelectedOption onClick={toggleShowOptions}>
         <SelectedText>{value.label}</SelectedText>
         <ArrowIcon {...iconAnimProps}>

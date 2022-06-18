@@ -2,7 +2,7 @@
 import styled from "@emotion/styled";
 import { redirect } from "next/dist/server/api-utils";
 
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { MdDoubleArrow } from "react-icons/md";
 import Button from "../components/Button";
 import { GearPiece } from "../components/GearImage";
@@ -23,6 +23,8 @@ import {
   SetType,
 } from "../contexts/HoningContext";
 import { prettyNumber } from "../utils/utils";
+import useLocalStorageState from "use-local-storage-state";
+import Checkbox from "../components/inputs/Checkbox";
 
 const Container = styled.div`
   padding: 1rem 0;
@@ -48,6 +50,13 @@ const Content = styled.div`
 `;
 
 const Header = styled.div`
+  display: flex;
+  /* flex-direction: column; */
+  flex-wrap: wrap;
+  gap: 1rem;
+`;
+
+const HeaderRow = styled.div`
   display: flex;
   gap: 1rem;
 `;
@@ -95,7 +104,6 @@ const TotalHeader = styled.h2`
 
 const ResultLine = styled.div`
   /* background-color: red; */
-
   /* flex: 1; */
   padding: 1rem 2rem;
 
@@ -110,13 +118,11 @@ const ResultLine2 = styled.div`
   height: 3rem;
   max-height: 3rem;
   /* background-color: red; */
-
   /* flex: 1; */
 
   padding: 0 2rem;
 
   display: flex;
-
   flex-direction: row;
   /* justify-content: center; */
   align-items: center;
@@ -303,14 +309,42 @@ const ZERO_COSTS: UpgradeCost = {
   silver: 0,
 };
 
+type StrongholdResearches = {
+  stronghold_research_honing_rate: boolean;
+  stronghold_research_exp_rate: boolean;
+};
+
+type A = Record<SetTier, StrongholdResearches>;
+
+const TT: A = {
+  "t1 302": {
+    stronghold_research_honing_rate: true,
+    stronghold_research_exp_rate: true,
+  },
+  "t2 802": {
+    stronghold_research_honing_rate: true,
+    stronghold_research_exp_rate: true,
+  },
+  "t3 1302": {
+    stronghold_research_honing_rate: true,
+    stronghold_research_exp_rate: true,
+  },
+  "t3 1340": {
+    stronghold_research_honing_rate: true,
+    stronghold_research_exp_rate: true,
+  },
+  "t3 relic": {
+    stronghold_research_honing_rate: true,
+    stronghold_research_exp_rate: true,
+  },
+};
+
 const getAvgGearScore = (ilvls: number[]) =>
   ilvls.reduce((prev, curr) => prev + curr, 0) / ilvls.length;
 
 const HoningCalculator = () => {
   const { honingData, getHoningByLvl, getAvgCostByLvl, getGearScore } =
     useHoningState();
-  const [inputs, setInputs] = useState<HoningFields[]>(equipmentSet);
-
   const [selectedTier, setSelectedTier] = useState<OptionType>(TIER_OPTIONS[0]);
   const currentTier = selectedTier.id as SetTier;
   const quickGearScoreOptions = tierBreakpoints[currentTier];
@@ -329,10 +363,29 @@ const HoningCalculator = () => {
         : 0,
   };
 
-  const data: HoningFieldsNumber[] = inputs.map((values) => {
-    const start = parseInt(values.honing_start) ?? 0;
-    const end = parseInt(values.honing_end) ?? 0;
-    const setType = values.type;
+  const [head, set_head] = useState(equipmentSet[0]);
+  const [shoulder, set_shoulder] = useState(equipmentSet[1]);
+  const [chest, set_chest] = useState(equipmentSet[2]);
+  const [pants, set_pants] = useState(equipmentSet[3]);
+  const [gloves, set_gloves] = useState(equipmentSet[4]);
+  const [weapon, set_weapon] = useState(equipmentSet[5]);
+
+  const inputs = [
+    { value: head, update: set_head },
+    { value: shoulder, update: set_shoulder },
+    { value: chest, update: set_chest },
+    { value: pants, update: set_pants },
+    { value: gloves, update: set_gloves },
+    { value: weapon, update: set_weapon },
+  ];
+
+  const findS = (input: {
+    value: HoningFields;
+    update: Dispatch<SetStateAction<HoningFields>>;
+  }) => {
+    const start = parseInt(input.value.honing_start) ?? 0;
+    const end = parseInt(input.value.honing_end) ?? 0;
+    const setType = input.value.type;
     const endLimit = Math.min(end, inputLimits.max);
 
     const upgrades: UpgradeCostData[] = [];
@@ -355,16 +408,45 @@ const HoningCalculator = () => {
     );
 
     return {
-      ...values,
+      ...input.value,
       tier: currentTier,
       honing_start: start,
       honing_end: end,
       upgrades,
       totalCosts,
     };
-  });
+  };
 
-  const totalUpgradeCosts: UpgradeCost = data.reduce(
+  const results: HoningFieldsNumber[] = inputs.map((input) =>
+    useMemo(() => findS(input), [input.value])
+  );
+
+  const [strongholdResearchInputs, setStrongholdResearchInputs] =
+    useLocalStorageState("stronghold-research", {
+      defaultValue: TT,
+    });
+
+  const toggleStrongholdResearch = (
+    tier: SetTier,
+    key: keyof StrongholdResearches
+  ) =>
+    setStrongholdResearchInputs((v) => ({
+      ...v,
+      [tier]: {
+        ...v[tier],
+        [key]: !v[tier][key],
+      },
+    }));
+
+  const toggleStrongholdHoningRate = () =>
+    toggleStrongholdResearch(currentTier, "stronghold_research_honing_rate");
+
+  const toggleStrongholdExpRate = () =>
+    toggleStrongholdResearch(currentTier, "stronghold_research_exp_rate");
+
+  // const [data, setData] = useState<HoningFieldsNumber[]>([]);
+
+  const totalUpgradeCosts: UpgradeCost = results.reduce(
     (prev, curr) => ({
       shard: prev.shard + Math.round(curr.totalCosts.shard),
       destruction: prev.destruction + Math.round(curr.totalCosts.destruction),
@@ -378,26 +460,19 @@ const HoningCalculator = () => {
   );
 
   const startingGearScore = getAvgGearScore(
-    data.map((setPiece) => getGearScore(setPiece.tier, setPiece.honing_start))
+    results.map((setPiece) =>
+      getGearScore(setPiece.tier, setPiece.honing_start)
+    )
   );
 
   const endingGearScore = getAvgGearScore(
-    data.map((setPiece) => getGearScore(setPiece.tier, setPiece.honing_end))
+    results.map((setPiece) => getGearScore(setPiece.tier, setPiece.honing_end))
   );
 
-  const changeInput = (value: HoningFields) => {
-    setInputs((inputs) => {
-      const index = inputs.findIndex((v) => v.id === value.id);
-
-      if (index !== -1)
-        return [...inputs.slice(0, index), value, ...inputs.slice(index + 1)];
-      else return inputs;
-    });
-  };
-
   useEffect(() => {
-    setInputs((inputs) =>
-      inputs.map((field) => ({
+    // this useEffect is used to reset the input limits when user switches from tier to tier
+    inputs.forEach((input) => {
+      input.update((field) => ({
         ...field,
         honing_start: `${Math.min(
           inputLimits.max,
@@ -407,49 +482,55 @@ const HoningCalculator = () => {
           inputLimits.max,
           parseInt(field.honing_end) ?? inputLimits.max
         )}`,
-      }))
-    );
+      }));
+    });
   }, [selectedTier]);
 
   return (
     <Container onClick={() => {}}>
       <Content>
         <Header>
+          {/* <HeaderRow> */}
           <CustomSelectedInput
             options={TIER_OPTIONS}
             value={selectedTier}
             onChange={setSelectedTier}
           />
-          {quickGearScoreOptions.map((value, i) => (
-            <StyledButton
-              key={i}
-              onClick={() => {
-                setInputs((inputs) => {
-                  return inputs.map((input) => ({
-                    ...input,
-                    honing_start: value.start.toString(),
-                    honing_end: value.end.toString(),
-                  }));
-                });
-              }}
-            >
-              <>
+          <Checkbox />
+          <Checkbox />
+          {/* </HeaderRow> */}
+          <HeaderRow>
+            {quickGearScoreOptions.map((value, i) => (
+              <StyledButton
+                key={i}
+                onClick={() => {
+                  inputs.forEach((input) => {
+                    input.update((field) => {
+                      return {
+                        ...field,
+                        honing_start: value.start.toString(),
+                        honing_end: value.end.toString(),
+                      };
+                    });
+                  });
+                }}
+              >
                 {getGearScore(currentTier, value.start)} -&gt;{" "}
                 {getGearScore(currentTier, value.end)}
-              </>
-            </StyledButton>
-          ))}
+              </StyledButton>
+            ))}
+          </HeaderRow>
         </Header>
         <EquipmentContainer>
           {inputs.map((eqPiece, i) => (
-            <PieceContainer key={eqPiece.id}>
+            <PieceContainer key={eqPiece.value.id}>
               <HoningPieceInput
                 min={inputLimits.min}
                 max={inputLimits.max}
-                data={eqPiece}
-                handleChange={changeInput}
+                data={eqPiece.value}
+                handleChange={eqPiece.update}
               />
-              <HoningPieceResults data={data[i]} />
+              <HoningPieceResults data={results[i]} />
             </PieceContainer>
           ))}
         </EquipmentContainer>

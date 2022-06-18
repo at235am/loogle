@@ -47,8 +47,8 @@ const Img = styled.img`
   /* object-fit: cover; */
   /* width: 120%; */
   /* height: 120%; */
-  width: 75%;
-  height: 75%;
+  /* width: 75%; */
+  /* height: 75%; */
 `;
 
 const GearImage = ({ piece = "chest", size }: Props) => {
@@ -57,13 +57,7 @@ const GearImage = ({ piece = "chest", size }: Props) => {
   const img = materialData.img;
 
   // return <Image src={img} width={x} height={x} />;
-  return (
-    <Img
-      src={img.src}
-
-      // width={x} height={x}
-    />
-  );
+  return <Img src={img.src} width={x} height={x} />;
 };
 
 export default GearImage;

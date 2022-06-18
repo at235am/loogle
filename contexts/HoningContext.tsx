@@ -9,7 +9,11 @@ import React, {
 } from "react";
 import { useEffect } from "react";
 import { useMediaQuery } from "react-responsive";
-import { expected_value } from "../utils/honing-calculations";
+import {
+  expected_value,
+  fillInOptions,
+  HoningOptions,
+} from "../utils/honing-calculations";
 import supabase from "../utils/supabase";
 
 type State = {
@@ -113,15 +117,23 @@ const HoningStateProvider = ({ children }: HoningProviderProps) => {
 
   const getAvgCost = (
     honingLvl: EquipmentUpgradeData,
-    honingRate?: number
+    honingRate?: number,
+    options?: Partial<HoningOptions>
   ): UpgradeCostData => {
-    const ev = expected_value(honingRate ?? honingLvl.initial_success_rate);
+    const opts = fillInOptions(options);
+
+    const ev = expected_value(
+      honingRate ?? honingLvl.initial_success_rate,
+      opts
+    );
 
     return {
       expectedValue: ev,
       honingLvl,
       costs: {
-        shard: ev * honingLvl.trial_shards + honingLvl.initial_shards,
+        shard:
+          ev * honingLvl.trial_shards +
+          honingLvl.initial_shards * (1 + opts.stronghold_research_exp_rate),
         destruction: ev * honingLvl.trial_destructions,
         guardian: ev * honingLvl.trial_guardians,
         leapstone: ev * honingLvl.trial_leapstones,

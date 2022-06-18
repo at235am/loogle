@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { ReactElement } from "react";
+import { ReactElement, ReactNode } from "react";
 
 const Container = styled.button`
   border-radius: 5px;
@@ -13,7 +13,7 @@ const Container = styled.button`
 type Props = {
   className?: string;
   type?: "button" | "reset" | "submit";
-  children?: ReactElement | string;
+  children?: ReactNode;
   onClick?: () => void;
 };
 
